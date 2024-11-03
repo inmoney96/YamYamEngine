@@ -3,6 +3,8 @@
 
 #include "framework.h"
 #include "Editor_Window.h"
+#include <vector>
+#include <random>
 
 #define MAX_LOADSTRING 100
 
@@ -100,6 +102,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
+
    if (!hWnd)
    {
       return FALSE;
@@ -121,6 +124,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
 //
 //
+int g_x = 0;
+int g_y = 0;
+
+void DrawRandomRec(HDC hdc);
+
+POINT g_ptObjPos;
+POINT g_ptObjScale;
+
+struct pos {
+    int l, t, r, b;
+};
+
+std::vector<pos> rects;
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -147,16 +164,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+            DrawRandomRec(hdc);
             EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+
+    case WM_LBUTTONDOWN:
+        g_x = LOWORD(lParam);//x
+        g_y = HIWORD(lParam);//y
+
+       rects.push_back({ g_x - 50,g_y + 50,
+                           g_x + 50,g_y - 50 });
+
+       InvalidateRect(hWnd, nullptr, true);
+
+        break;
+
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
+}
+
+void DrawRandomRec(HDC hdc) {
+    for (int i = 0; i < rects.size(); i++)
+    {
+        HBRUSH brush = CreateSolidBrush(RGB(rand()%255, rand() % 255, rand() % 255));
+        HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
+        Rectangle(hdc, rects[i].l, rects[i].t, rects[i].r, rects[i].b);
+        SelectObject(hdc, oldBrush);
+        DeleteObject(brush);
+    }
+    
 }
 
 // 정보 대화 상자의 메시지 처리기입니다.
